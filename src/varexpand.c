@@ -19,7 +19,12 @@ int varexpand(const char *input, char **out, char **undefined_var) {
   do {                                                                         \
     if (len + 1 >= cap) {                                                      \
       cap *= 2;                                                                \
-      buf = realloc(buf, cap);                                                 \
+      char *tmp_ = realloc(buf, cap);                                          \
+      if (!tmp_) {                                                             \
+        free(buf);                                                             \
+        return -1;                                                             \
+      }                                                                        \
+      buf = tmp_;                                                              \
     }                                                                          \
     buf[len++] = (ch);                                                         \
   } while (0)

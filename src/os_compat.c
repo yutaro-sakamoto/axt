@@ -47,7 +47,6 @@ static char *read_fd(int fd) {
   char *buf = malloc(cap);
   if (!buf)
     return strdup("");
-  ssize_t n;
   for (;;) {
     /* Ensure there is room to read */
     if (len + 256 >= cap) {
@@ -57,7 +56,7 @@ static char *read_fd(int fd) {
         break;
       buf = tmp;
     }
-    n = read(fd, buf + len, cap - len - 1);
+    ssize_t n = read(fd, buf + len, cap - len - 1);
     if (n <= 0)
       break;
     len += (size_t)n;
@@ -152,7 +151,7 @@ int os_rmdir_r(const char *path) {
   if (!d)
     return -1;
 
-  struct dirent *ent;
+  const struct dirent *ent;
   char fullpath[4096];
   while ((ent = readdir(d)) != NULL) {
     if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)

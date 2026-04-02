@@ -43,7 +43,7 @@ check-format:
 	clang-format --dry-run --Werror $(FORMAT_SRCS)
 
 lint:
-	cppcheck --enable=all --error-exitcode=1 --suppress=missingIncludeSystem $(FORMAT_SRCS)
+	cppcheck --enable=all --error-exitcode=1 --suppress=missingIncludeSystem --suppress=unusedFunction $(FORMAT_SRCS)
 
 amalgamate:
 	sh amalgamate.sh

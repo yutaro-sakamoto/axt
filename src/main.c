@@ -24,18 +24,17 @@ typedef struct {
 } Options;
 
 static void print_usage(void) {
-  fprintf(stderr,
-          "usage: axt [options] <testfile.at>\n"
-          "\n"
-          "Options:\n"
-          "  -j <N>          Parallel execution count (default: 2)\n"
-          "  --env <file>    Environment variable file\n"
-          "  -v              Verbose output\n"
-          "  --help          Show help\n"
-          "  --version       Show version\n");
+  fprintf(stderr, "usage: axt [options] <testfile.at>\n"
+                  "\n"
+                  "Options:\n"
+                  "  -j <N>          Parallel execution count (default: 2)\n"
+                  "  --env <file>    Environment variable file\n"
+                  "  -v              Verbose output\n"
+                  "  --help          Show help\n"
+                  "  --version       Show version\n");
 }
 
-static int parse_options(int argc, char *argv[], Options *opts) {
+static int parse_options(int argc, const char *const argv[], Options *opts) {
   opts->parallel = 2;
   opts->envfile = NULL;
   opts->verbose = 0;
@@ -295,7 +294,7 @@ static int run_tests(TestSuite *suite, const char *basedir, int parallel,
 
 int main(int argc, char *argv[]) {
   Options opts;
-  int rc = parse_options(argc, argv, &opts);
+  int rc = parse_options(argc, (const char *const *)argv, &opts);
   if (rc == -2)
     return 0;
   if (rc < 0)
