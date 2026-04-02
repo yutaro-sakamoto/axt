@@ -28,14 +28,16 @@ test: $(TARGET)
 clean:
 	rm -f $(TARGET) $(SRC_DIR)/parser.c $(SRC_DIR)/parser.h $(SRC_DIR)/lexer.c *.o
 
+FORMAT_SRCS = $(SRC_DIR)/main.c
+
 format:
-	@echo "format: not yet implemented"
+	clang-format -i $(FORMAT_SRCS)
 
 check-format:
-	@echo "check-format: not yet implemented"
+	clang-format --dry-run --Werror $(FORMAT_SRCS)
 
 lint:
-	@echo "lint: not yet implemented"
+	cppcheck --enable=all --error-exitcode=1 --suppress=missingIncludeSystem $(FORMAT_SRCS)
 
 coverage:
 	@echo "coverage: not yet implemented"
