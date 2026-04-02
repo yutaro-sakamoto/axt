@@ -11,7 +11,7 @@ TARGET   = axt
 
 .PHONY: all test clean format check-format lint coverage amalgamate
 
-all: $(TARGET)
+all: $(TARGET) axt.c
 
 $(SRC_DIR)/parser.c $(SRC_DIR)/parser.h: $(SRC_DIR)/parser.y
 	$(BISON) -d -o $(SRC_DIR)/parser.c $(SRC_DIR)/parser.y
@@ -26,7 +26,7 @@ test: $(TARGET)
 	@sh test/run_tests.sh
 
 clean:
-	rm -f $(TARGET) $(SRC_DIR)/parser.c $(SRC_DIR)/parser.h $(SRC_DIR)/lexer.c *.o
+	rm -f $(TARGET) axt.c $(SRC_DIR)/parser.c $(SRC_DIR)/parser.h $(SRC_DIR)/lexer.c *.o
 
 FORMAT_SRCS = $(SRC_DIR)/main.c $(SRC_DIR)/ast.h $(SRC_DIR)/ast.c \
               $(SRC_DIR)/varexpand.h $(SRC_DIR)/varexpand.c \
@@ -45,8 +45,19 @@ check-format:
 lint:
 	cppcheck --enable=all --error-exitcode=1 --suppress=missingIncludeSystem --suppress=unusedFunction $(FORMAT_SRCS)
 
-amalgamate:
+HAND_SRCS = $(SRC_DIR)/main.c $(SRC_DIR)/ast.h $(SRC_DIR)/ast.c \
+            $(SRC_DIR)/varexpand.h $(SRC_DIR)/varexpand.c \
+            $(SRC_DIR)/envfile.h $(SRC_DIR)/envfile.c \
+            $(SRC_DIR)/os_compat.h $(SRC_DIR)/os_compat.c \
+            $(SRC_DIR)/runner.h $(SRC_DIR)/runner.c \
+            $(SRC_DIR)/threadpool.h $(SRC_DIR)/threadpool.c \
+            $(SRC_DIR)/progress.h $(SRC_DIR)/progress.c \
+            $(SRC_DIR)/parser.y $(SRC_DIR)/lexer.l
+
+axt.c: $(HAND_SRCS)
 	sh amalgamate.sh
+
+amalgamate: axt.c
 
 coverage:
 	@echo "coverage: not yet implemented"

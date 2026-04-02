@@ -37,3 +37,67 @@ jobs:
             make lint
             make check-format
             make format
+
+  # Generate amalgamated axt.c and upload as artifact
+  amalgamate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: sudo apt-get update && sudo apt-get install -y flex bison
+      - run: make amalgamate
+      - uses: actions/upload-artifact@v4
+        with:
+          name: axt-amalgamated
+          path: axt.c
+
+  # Test amalgamated build on minimal Ubuntu container
+  test-ubuntu-minimal:
+    needs: amalgamate
+    runs-on: ubuntu-latest
+    container: ubuntu:24.04
+    steps:
+      - uses: actions/checkout@v6
+      - run: apt-get update && apt-get install -y gcc
+      - uses: actions/download-artifact@v4
+        with:
+          name: axt-amalgamated
+      - run: cc axt.c -lpthread -o axt
+      - run: sh test/run_tests.sh
+
+  # Test amalgamated build on AlmaLinux minimal container
+  test-almalinux-minimal:
+    needs: amalgamate
+    runs-on: ubuntu-latest
+    container: almalinux:9-minimal
+    steps:
+      - uses: actions/checkout@v6
+      - run: microdnf install -y gcc glibc-devel
+      - uses: actions/download-artifact@v4
+        with:
+          name: axt-amalgamated
+      - run: cc axt.c -lpthread -o axt
+      - run: sh test/run_tests.sh
+
+  # Test amalgamated build on macOS
+  test-macos:
+    needs: amalgamate
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v4
+        with:
+          name: axt-amalgamated
+      - run: cc axt.c -lpthread -o axt
+      - run: sh test/run_tests.sh
+
+  # Test amalgamated build on Windows (compile only - POSIX runtime not available)
+  test-windows:
+    needs: amalgamate
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v4
+        with:
+          name: axt-amalgamated
+      - uses: ilammy/msvc-dev-cmd@v1
+      - run: cl /W3 /D_CRT_SECURE_NO_WARNINGS axt.c /Fe:axt.exe

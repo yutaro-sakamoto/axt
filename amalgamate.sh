@@ -16,9 +16,21 @@ flex -o "$SRCDIR/lexer.c" "$SRCDIR/lexer.l"
 
 echo "Amalgamating into $OUTPUT..." >&2
 
+# POSIX-only headers that need #ifndef _WIN32 guards
+POSIX_HEADERS="pthread.h unistd.h sys/stat.h sys/types.h sys/wait.h dirent.h poll.h"
+
+is_posix_header() {
+    for h in $POSIX_HEADERS; do
+        if [ "$1" = "$h" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 # Step 2: Collect all system includes from all source files
 collect_system_includes() {
-    cat \
+    ALL_INCLUDES=$(cat \
         "$SRCDIR/ast.h" \
         "$SRCDIR/ast.c" \
         "$SRCDIR/varexpand.h" \
@@ -37,7 +49,29 @@ collect_system_includes() {
         "$SRCDIR/parser.h" \
         "$SRCDIR/lexer.c" \
         "$SRCDIR/main.c" \
-    | grep '^#include <' | sort -u
+    | grep '^#include <' | sort -u)
+
+    # Emit portable headers first
+    echo "$ALL_INCLUDES" | while IFS= read -r line; do
+        header=$(echo "$line" | sed 's/#include <\(.*\)>/\1/')
+        if ! is_posix_header "$header"; then
+            echo "$line"
+        fi
+    done
+
+    # Emit POSIX headers with guards
+    POSIX_FOUND=$(echo "$ALL_INCLUDES" | while IFS= read -r line; do
+        header=$(echo "$line" | sed 's/#include <\(.*\)>/\1/')
+        if is_posix_header "$header"; then
+            echo "$line"
+        fi
+    done)
+
+    if [ -n "$POSIX_FOUND" ]; then
+        echo "#ifndef _WIN32"
+        echo "$POSIX_FOUND"
+        echo "#endif"
+    fi
 }
 
 # Step 3: Strip local includes and system includes from a file

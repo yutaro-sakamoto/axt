@@ -6,9 +6,13 @@ src/parser.h
 # Build artifacts
 *.o
 axt
+axt.exe
 
 # Amalgamation output
 axt.c
+
+# Test working directories
+*.dir/
 
 # Coverage
 *.gcno
