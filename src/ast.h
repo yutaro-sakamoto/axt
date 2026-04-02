@@ -4,7 +4,10 @@
 #include <stdlib.h>
 
 /* Step types */
-typedef enum { STEP_AT_CHECK, STEP_AT_DATA } StepType;
+typedef enum {
+  STEP_AT_CHECK,
+  STEP_AT_DATA
+} StepType;
 
 typedef struct TestStep {
   StepType type;
