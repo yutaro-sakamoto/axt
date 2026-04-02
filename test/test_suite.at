@@ -1,0 +1,4 @@
+AT_INIT([axt self-test])
+my_include([basic.at])
+my_include([execution.at])
+my_include([features.at])

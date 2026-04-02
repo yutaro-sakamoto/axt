@@ -1,0 +1,43 @@
+# Command execution tests
+
+AT_SETUP([AT_CHECK executes echo and verifies stdout])
+AT_DATA([t.at], [AT_INIT(@<:@T@:>@)
+AT_SETUP(@<:@echo test@:>@)
+AT_CHECK(@<:@echo hello@:>@, @<:@0@:>@, @<:@hello
+@:>@)
+AT_CLEANUP
+])
+AT_CHECK([$AXT t.at], [0])
+AT_CLEANUP
+
+AT_SETUP([AT_CHECK detects wrong exit code])
+AT_DATA([t.at], [AT_INIT(@<:@T@:>@)
+AT_SETUP(@<:@fail test@:>@)
+AT_CHECK(@<:@false@:>@, @<:@0@:>@)
+AT_CLEANUP
+])
+AT_CHECK([$AXT t.at], [1])
+AT_CLEANUP
+
+AT_SETUP([AT_CHECK with default arguments])
+AT_DATA([t.at], [AT_INIT(@<:@T@:>@)
+AT_SETUP(@<:@default args@:>@)
+AT_CHECK(@<:@true@:>@)
+AT_CLEANUP
+])
+AT_CHECK([$AXT t.at], [0])
+AT_CLEANUP
+
+AT_SETUP([multiple test cases])
+AT_DATA([t.at], [AT_INIT(@<:@Multi@:>@)
+AT_SETUP(@<:@test one@:>@)
+AT_CHECK(@<:@echo one@:>@, @<:@0@:>@, @<:@one
+@:>@)
+AT_CLEANUP
+AT_SETUP(@<:@test two@:>@)
+AT_CHECK(@<:@echo two@:>@, @<:@0@:>@, @<:@two
+@:>@)
+AT_CLEANUP
+])
+AT_CHECK([$AXT t.at], [0])
+AT_CLEANUP

@@ -23,7 +23,7 @@ $(TARGET): $(SRCS)
 	$(CC) $(CFLAGS) -o $@ $(SRCS) $(LDFLAGS)
 
 test: $(TARGET)
-	@sh test/run_tests.sh
+	AXT=$$(pwd)/axt ./axt -j 1 test/test_suite.at
 
 clean:
 	rm -f $(TARGET) axt.c $(SRC_DIR)/parser.c $(SRC_DIR)/parser.h $(SRC_DIR)/lexer.c *.o

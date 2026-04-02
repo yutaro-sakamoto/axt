@@ -36,6 +36,14 @@ TestCaseResult run_test_case(const TestCase *tc, const char *workdir,
         return make_result(RESULT_VAREXPAND_ERROR, msg, tc->description);
       }
 
+      /* Create parent directories if needed */
+      char *last_slash = strrchr(filepath, '/');
+      if (last_slash) {
+        *last_slash = '\0';
+        os_mkdir_p(filepath);
+        *last_slash = '/';
+      }
+
       if (os_write_file(filepath, expanded, strlen(expanded)) < 0) {
         free(expanded);
         char msg[512];

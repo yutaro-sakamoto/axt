@@ -62,7 +62,7 @@ jobs:
         with:
           name: axt-amalgamated
       - run: cc axt.c -lpthread -o axt
-      - run: sh test/run_tests.sh
+      - run: AXT=$(pwd)/axt ./axt -j 1 test/test_suite.at
 
   # Test amalgamated build on AlmaLinux 9 container
   test-almalinux:
@@ -76,7 +76,7 @@ jobs:
         with:
           name: axt-amalgamated
       - run: cc axt.c -lpthread -o axt
-      - run: sh test/run_tests.sh
+      - run: AXT=$(pwd)/axt ./axt -j 1 test/test_suite.at
 
   # Test amalgamated build on macOS
   test-macos:
@@ -88,7 +88,7 @@ jobs:
         with:
           name: axt-amalgamated
       - run: cc axt.c -lpthread -o axt
-      - run: sh test/run_tests.sh
+      - run: AXT=$(pwd)/axt ./axt -j 1 test/test_suite.at
 
   # Test amalgamated build on Windows (compile only - POSIX runtime not available)
   test-windows:
