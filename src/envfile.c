@@ -41,8 +41,18 @@ int envfile_load(const char *path) {
     while (kend >= key && isspace((unsigned char)*kend))
       *kend-- = '\0';
 
-    /* setenv with overwrite=0 (user environment takes priority) */
+      /* Set env var only if not already set (user environment takes priority)
+       */
+#ifdef _WIN32
+    {
+      const char *existing = getenv(key);
+      if (!existing) {
+        _putenv_s(key, value);
+      }
+    }
+#else
     setenv(key, value, 0);
+#endif
   }
 
   fclose(f);

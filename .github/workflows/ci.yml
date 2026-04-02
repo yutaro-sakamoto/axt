@@ -64,14 +64,14 @@ jobs:
       - run: cc axt.c -lpthread -o axt
       - run: sh test/run_tests.sh
 
-  # Test amalgamated build on AlmaLinux minimal container
-  test-almalinux-minimal:
+  # Test amalgamated build on AlmaLinux 9 container
+  test-almalinux:
     needs: amalgamate
     runs-on: ubuntu-latest
-    container: almalinux:9-minimal
+    container: almalinux:9
     steps:
       - uses: actions/checkout@v6
-      - run: microdnf install -y gcc glibc-devel
+      - run: dnf install -y gcc
       - uses: actions/download-artifact@v4
         with:
           name: axt-amalgamated
