@@ -6,10 +6,10 @@ BISON   ?= bison
 FLEX    ?= flex
 
 SRC_DIR  = src
-SRCS     = $(SRC_DIR)/main.c $(SRC_DIR)/parser.c $(SRC_DIR)/lexer.c
+SRCS     = $(SRC_DIR)/main.c $(SRC_DIR)/ast.c $(SRC_DIR)/varexpand.c $(SRC_DIR)/envfile.c $(SRC_DIR)/os_compat.c $(SRC_DIR)/runner.c $(SRC_DIR)/threadpool.c $(SRC_DIR)/progress.c $(SRC_DIR)/parser.c $(SRC_DIR)/lexer.c
 TARGET   = axt
 
-.PHONY: all test clean format check-format lint coverage
+.PHONY: all test clean format check-format lint coverage amalgamate
 
 all: $(TARGET)
 
@@ -28,7 +28,13 @@ test: $(TARGET)
 clean:
 	rm -f $(TARGET) $(SRC_DIR)/parser.c $(SRC_DIR)/parser.h $(SRC_DIR)/lexer.c *.o
 
-FORMAT_SRCS = $(SRC_DIR)/main.c
+FORMAT_SRCS = $(SRC_DIR)/main.c $(SRC_DIR)/ast.h $(SRC_DIR)/ast.c \
+              $(SRC_DIR)/varexpand.h $(SRC_DIR)/varexpand.c \
+              $(SRC_DIR)/envfile.h $(SRC_DIR)/envfile.c \
+              $(SRC_DIR)/os_compat.h $(SRC_DIR)/os_compat.c \
+              $(SRC_DIR)/runner.h $(SRC_DIR)/runner.c \
+              $(SRC_DIR)/threadpool.h $(SRC_DIR)/threadpool.c \
+              $(SRC_DIR)/progress.h $(SRC_DIR)/progress.c
 
 format:
 	clang-format -i $(FORMAT_SRCS)
@@ -38,6 +44,9 @@ check-format:
 
 lint:
 	cppcheck --enable=all --error-exitcode=1 --suppress=missingIncludeSystem $(FORMAT_SRCS)
+
+amalgamate:
+	sh amalgamate.sh
 
 coverage:
 	@echo "coverage: not yet implemented"

@@ -7,6 +7,7 @@
 - test/: テストコード
 - src/: axtのソースコード
 - doc/: ドキュメント
+- amalgamate.sh: 全ソースを単一のaxt.cに統合するスクリプト
 
 # コマンド
 
@@ -15,6 +16,8 @@
 - `make format`: コードをフォーマットする
 - `make check-format`: コードがフォーマットされているかチェックする
 - `make lint`: コードを静的解析する
+- `make clean`: ビルド成果物を削除する
+- `make amalgamate`: 全ソースを単一のaxt.cに統合する
 - `make coverage`: カバレッジを測定する
 
 # 開発の流れ
