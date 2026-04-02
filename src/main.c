@@ -283,7 +283,7 @@ static int run_tests(TestSuite *suite, const char *basedir, int parallel,
   }
 
   printf("\n---\n");
-  printf("テスト数: %d  成功: %d  失敗: %d\n", total, passed, failed);
+  printf("Tests: %d  Passed: %d  Failed: %d\n", total, passed, failed);
 
   free(results);
   free(tasks);
