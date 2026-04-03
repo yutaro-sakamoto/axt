@@ -7,7 +7,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifndef _WIN32
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
 #include <pthread.h>
 #endif
 
@@ -86,6 +89,11 @@ static int parse_options(int argc, const char *const argv[], Options *opts) {
 
 static void parse_input_path(const char *path) {
   const char *slash = strrchr(path, '/');
+#ifdef _WIN32
+  const char *bslash = strrchr(path, '\\');
+  if (bslash && (!slash || bslash > slash))
+    slash = bslash;
+#endif
   if (slash) {
     size_t dirlen = (size_t)(slash - path);
     input_basedir = malloc(dirlen + 1);
@@ -128,7 +136,10 @@ typedef struct {
 } TaskArg;
 
 /* Worker ID assignment */
-#ifndef _WIN32
+#ifdef _WIN32
+static CRITICAL_SECTION worker_id_cs;
+static int worker_id_cs_initialized = 0;
+#else
 static pthread_mutex_t worker_id_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 static int *worker_id_pool = NULL;
@@ -136,7 +147,9 @@ static int worker_id_pool_size = 0;
 
 static int acquire_worker_id(void) {
   int id = -1;
-#ifndef _WIN32
+#ifdef _WIN32
+  EnterCriticalSection(&worker_id_cs);
+#else
   pthread_mutex_lock(&worker_id_mutex);
 #endif
   for (int i = 0; i < worker_id_pool_size; i++) {
@@ -146,7 +159,9 @@ static int acquire_worker_id(void) {
       break;
     }
   }
-#ifndef _WIN32
+#ifdef _WIN32
+  LeaveCriticalSection(&worker_id_cs);
+#else
   pthread_mutex_unlock(&worker_id_mutex);
 #endif
   return id;
@@ -155,11 +170,15 @@ static int acquire_worker_id(void) {
 static void release_worker_id(int id) {
   if (id < 0)
     return;
-#ifndef _WIN32
+#ifdef _WIN32
+  EnterCriticalSection(&worker_id_cs);
+#else
   pthread_mutex_lock(&worker_id_mutex);
 #endif
   worker_id_pool[id] = 0;
-#ifndef _WIN32
+#ifdef _WIN32
+  LeaveCriticalSection(&worker_id_cs);
+#else
   pthread_mutex_unlock(&worker_id_mutex);
 #endif
 }
@@ -182,6 +201,13 @@ static void task_run(void *arg) {
   release_worker_id(wid);
 }
 
+#ifdef _WIN32
+static DWORD WINAPI progress_thread_func_win(LPVOID arg) {
+  progress_thread_func(arg);
+  return 0;
+}
+#endif
+
 static int run_tests(TestSuite *suite, const char *basedir, int parallel,
                      int verbose) {
   int total = suite->num_cases;
@@ -194,6 +220,12 @@ static int run_tests(TestSuite *suite, const char *basedir, int parallel,
   /* Initialize worker ID pool */
   worker_id_pool_size = parallel;
   worker_id_pool = calloc((size_t)parallel, sizeof(int));
+#ifdef _WIN32
+  if (!worker_id_cs_initialized) {
+    InitializeCriticalSection(&worker_id_cs);
+    worker_id_cs_initialized = 1;
+  }
+#endif
 
   /* Setup progress context (only for parallel with multiple workers) */
   ProgressCtx progress;
@@ -229,7 +261,13 @@ static int run_tests(TestSuite *suite, const char *basedir, int parallel,
     }
   } else {
     /* Parallel execution with progress bar */
-#ifndef _WIN32
+#ifdef _WIN32
+    HANDLE progress_thread_handle = NULL;
+    if (use_progress) {
+      progress_thread_handle =
+          CreateThread(NULL, 0, progress_thread_func_win, &progress, 0, NULL);
+    }
+#else
     pthread_t progress_thread;
     if (use_progress) {
       pthread_create(&progress_thread, NULL, progress_thread_func, &progress);
@@ -243,7 +281,14 @@ static int run_tests(TestSuite *suite, const char *basedir, int parallel,
     threadpool_wait(pool);
     threadpool_destroy(pool);
 
-#ifndef _WIN32
+#ifdef _WIN32
+    if (use_progress) {
+      progress.done = 1;
+      WaitForSingleObject(progress_thread_handle, INFINITE);
+      CloseHandle(progress_thread_handle);
+      progress_cleanup(&progress);
+    }
+#else
     if (use_progress) {
       progress.done = 1;
       pthread_join(progress_thread, NULL);

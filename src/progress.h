@@ -3,7 +3,10 @@
 
 #include "ast.h"
 
-#ifndef _WIN32
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
 #include <pthread.h>
 #endif
 
@@ -13,7 +16,9 @@ typedef struct {
   TestCaseResult *results; /* shared results array */
 
   /* Progress counters - protected by mutex */
-#ifndef _WIN32
+#ifdef _WIN32
+  CRITICAL_SECTION mutex;
+#else
   pthread_mutex_t mutex;
 #endif
   int completed;
@@ -21,7 +26,9 @@ typedef struct {
 
   /* Worker status - array of num_workers strings */
   char **worker_names;
-#ifndef _WIN32
+#ifdef _WIN32
+  CRITICAL_SECTION worker_mutex;
+#else
   pthread_mutex_t worker_mutex;
 #endif
 

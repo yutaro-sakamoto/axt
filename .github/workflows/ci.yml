@@ -90,7 +90,7 @@ jobs:
       - run: cc axt.c -lpthread -o axt
       - run: AXT=$(pwd)/axt ./axt -j 1 test/test_suite.at
 
-  # Test amalgamated build on Windows (compile only - POSIX runtime not available)
+  # Test amalgamated build on Windows (compile only - test suite requires sh)
   test-windows:
     needs: amalgamate
     runs-on: windows-latest

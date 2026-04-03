@@ -3,7 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef _WIN32
+#ifdef _WIN32
+/* strdup is available as _strdup on MSVC */
+#ifndef strdup
+#define strdup _strdup
+#endif
+#else
 #include <unistd.h>
 #endif
 
@@ -23,20 +28,27 @@ void progress_init(ProgressCtx *ctx, int total, int num_workers,
     ctx->worker_names[i] = strdup("(idle)");
   }
 
-#ifndef _WIN32
+#ifdef _WIN32
+  InitializeCriticalSection(&ctx->mutex);
+  InitializeCriticalSection(&ctx->worker_mutex);
+#else
   pthread_mutex_init(&ctx->mutex, NULL);
   pthread_mutex_init(&ctx->worker_mutex, NULL);
 #endif
 }
 
 void progress_complete(ProgressCtx *ctx, int passed) {
-#ifndef _WIN32
+#ifdef _WIN32
+  EnterCriticalSection(&ctx->mutex);
+#else
   pthread_mutex_lock(&ctx->mutex);
 #endif
   ctx->completed++;
   if (!passed)
     ctx->failed++;
-#ifndef _WIN32
+#ifdef _WIN32
+  LeaveCriticalSection(&ctx->mutex);
+#else
   pthread_mutex_unlock(&ctx->mutex);
 #endif
 }
@@ -44,12 +56,16 @@ void progress_complete(ProgressCtx *ctx, int passed) {
 void progress_set_worker(ProgressCtx *ctx, int worker_id, const char *name) {
   if (worker_id < 0 || worker_id >= ctx->num_workers)
     return;
-#ifndef _WIN32
+#ifdef _WIN32
+  EnterCriticalSection(&ctx->worker_mutex);
+#else
   pthread_mutex_lock(&ctx->worker_mutex);
 #endif
   free(ctx->worker_names[worker_id]);
   ctx->worker_names[worker_id] = strdup(name ? name : "(idle)");
-#ifndef _WIN32
+#ifdef _WIN32
+  LeaveCriticalSection(&ctx->worker_mutex);
+#else
   pthread_mutex_unlock(&ctx->worker_mutex);
 #endif
 }
@@ -58,12 +74,16 @@ static void render_progress(ProgressCtx *ctx) {
   int total = ctx->total;
   int num_workers = ctx->num_workers;
 
-#ifndef _WIN32
+#ifdef _WIN32
+  EnterCriticalSection(&ctx->mutex);
+#else
   pthread_mutex_lock(&ctx->mutex);
 #endif
   int completed = ctx->completed;
   int failed = ctx->failed;
-#ifndef _WIN32
+#ifdef _WIN32
+  LeaveCriticalSection(&ctx->mutex);
+#else
   pthread_mutex_unlock(&ctx->mutex);
 #endif
 
@@ -105,13 +125,17 @@ static void render_progress(ProgressCtx *ctx) {
           total, failed);
 
   /* Render worker status */
-#ifndef _WIN32
+#ifdef _WIN32
+  EnterCriticalSection(&ctx->worker_mutex);
+#else
   pthread_mutex_lock(&ctx->worker_mutex);
 #endif
   for (int i = 0; i < num_workers; i++) {
     fprintf(stderr, "\033[KWorker %d: %s\n", i + 1, ctx->worker_names[i]);
   }
-#ifndef _WIN32
+#ifdef _WIN32
+  LeaveCriticalSection(&ctx->worker_mutex);
+#else
   pthread_mutex_unlock(&ctx->worker_mutex);
 #endif
 
@@ -123,7 +147,9 @@ void *progress_thread_func(void *arg) {
 
   while (!ctx->done) {
     render_progress(ctx);
-#ifndef _WIN32
+#ifdef _WIN32
+    Sleep(100); /* 100ms */
+#else
     usleep(100000); /* 100ms */
 #endif
   }
@@ -148,7 +174,10 @@ void progress_cleanup(ProgressCtx *ctx) {
     free(ctx->worker_names[i]);
   }
   free(ctx->worker_names);
-#ifndef _WIN32
+#ifdef _WIN32
+  DeleteCriticalSection(&ctx->mutex);
+  DeleteCriticalSection(&ctx->worker_mutex);
+#else
   pthread_mutex_destroy(&ctx->mutex);
   pthread_mutex_destroy(&ctx->worker_mutex);
 #endif

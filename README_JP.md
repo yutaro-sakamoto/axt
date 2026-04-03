@@ -6,6 +6,8 @@ GNU autotest 代替テスト実行器。
 
 ## ビルド
 
+### Linux / macOS
+
 ```sh
 make
 ```
@@ -13,6 +15,16 @@ make
 flex と bison で C コードを生成し、gcc でコンパイルします。
 
 必要なツール: gcc, make, flex, bison
+
+### Windows
+
+amalgamation された単一ソースファイルから MSVC でビルドします。
+
+```cmd
+cl /W3 /D_CRT_SECURE_NO_WARNINGS axt.c /Fe:axt.exe
+```
+
+必要なツール: Visual Studio (MSVC)
 
 ## テスト
 
