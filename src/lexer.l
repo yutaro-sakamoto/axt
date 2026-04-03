@@ -15,7 +15,7 @@ static int include_stack_ptr = 0;
 void lexer_push_file(const char *filename);
 %}
 
-%option noyywrap
+%option noyywrap yylineno
 
 %%
 
@@ -29,6 +29,7 @@ void lexer_push_file(const char *filename);
 "AT_CLEANUP"        { return AT_CLEANUP; }
 "m4_include"        { return M4_INCLUDE; }
 "my_include"        { return M4_INCLUDE; }
+"AT_KEYWORDS"       { return AT_KEYWORDS; }
 
 "("                 { return LPAREN; }
 ")"                 { return RPAREN; }

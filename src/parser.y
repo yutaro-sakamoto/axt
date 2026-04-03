@@ -18,7 +18,7 @@ static int arglist_count;
     char *str;
 }
 
-%token AT_INIT AT_SETUP AT_CHECK AT_DATA AT_CLEANUP M4_INCLUDE
+%token AT_INIT AT_SETUP AT_CHECK AT_DATA AT_CLEANUP AT_KEYWORDS M4_INCLUDE
 %token <str> STRING
 %token LPAREN RPAREN COMMA
 
@@ -65,6 +65,16 @@ statement
           lexer_push_file($3);
           free($3);
         }
+    | AT_KEYWORDS LPAREN STRING RPAREN
+        { free($3); }
+    | error AT_CLEANUP
+        {
+          /* Error recovery: skip until AT_CLEANUP and process it */
+          if (parsed_suite && current_case) {
+            suite_add_case(parsed_suite, current_case);
+            current_case = NULL;
+          }
+        }
     | AT_CLEANUP
         {
           if (parsed_suite && current_case) {
@@ -88,10 +98,19 @@ arglist
             free($3);
           }
         }
+    | arglist COMMA
+        {
+          /* Empty argument (e.g., AT_CHECK([cmd], [1], , [stderr])) */
+          if (arglist_count < 4) {
+            arglist_args[arglist_count++] = strdup("");
+          }
+        }
     ;
 
 %%
 
+extern int yylineno;
+
 void yyerror(const char *s) {
-    fprintf(stderr, "parse error: %s\n", s);
+    fprintf(stderr, "parse error at line %d: %s\n", yylineno, s);
 }
