@@ -99,5 +99,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: axt-amalgamated
-      - uses: ilammy/msvc-dev-cmd@v1
-      - run: cl /W3 /D_CRT_SECURE_NO_WARNINGS axt.c /Fe:axt.exe
+      - shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64
+          cl /W3 /D_CRT_SECURE_NO_WARNINGS axt.c /Fe:axt.exe
