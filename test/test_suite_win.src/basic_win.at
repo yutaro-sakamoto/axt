@@ -1,0 +1,15 @@
+# Basic error handling tests (Windows)
+
+AT_SETUP([no arguments exits with error])
+AT_CHECK([$AXT], [1])
+AT_CLEANUP
+
+AT_SETUP([nonexistent file exits with error])
+AT_CHECK([$AXT nonexistent_file.at], [1])
+AT_CLEANUP
+
+AT_SETUP([parse valid AT_INIT])
+AT_DATA([simple.at], [AT_INIT(@<:@Test Suite@:>@)
+])
+AT_CHECK([$AXT simple.at], [0])
+AT_CLEANUP

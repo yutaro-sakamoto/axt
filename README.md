@@ -26,6 +26,15 @@ cl /W3 /D_CRT_SECURE_NO_WARNINGS axt.c /Fe:axt.exe
 
 Prerequisites: Visual Studio (MSVC)
 
+## Shell Behavior
+
+On Unix, AT_CHECK commands are executed via `/bin/sh -c`.  
+On Windows, AT_CHECK commands are written to a temporary `.bat` file and executed via `cmd.exe /C`.
+
+This means the commands inside AT_CHECK must use the syntax of the platform's shell:
+- Unix: standard shell syntax (pipes, `grep`, `sed`, etc.)
+- Windows: `cmd.exe` syntax (`echo`, `type`, `exit /b`, etc.)
+
 ## Test
 
 ```sh

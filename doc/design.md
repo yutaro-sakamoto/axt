@@ -194,4 +194,7 @@ AT_CLEANUP
   - Unix: `cc axt.c -lpthread -o axt`
   - Windows: `cl axt.c /Fe:axt.exe`
 - Windows での `pthread` 相当は Win32 API で実装し、`pthreads-win32` 等のライブラリに依存しない
-- テスト実行時のシェルの種類（`/bin/sh` vs `cmd.exe`）はユーザーの責任とする
+- テスト実行時のシェルは **プラットフォームに応じて自動選択** される
+  - Unix: `/bin/sh -c` でコマンドを実行する
+  - Windows: 一時 `.bat` ファイルに書き出し、`cmd.exe /C` で実行する
+  - したがって、AT_CHECK 内のコマンドは実行プラットフォームのシェル構文に従う必要がある

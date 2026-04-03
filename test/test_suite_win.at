@@ -1,0 +1,4 @@
+AT_INIT([axt self-test (Windows)])
+my_include([basic_win.at])
+my_include([execution_win.at])
+my_include([features_win.at])

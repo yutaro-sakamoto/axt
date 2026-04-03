@@ -14,6 +14,17 @@
 #define strdup _strdup
 #endif
 
+/* Strip \r from a string in-place (normalize CRLF to LF) */
+static void strip_cr(char *s) {
+  char *r = s, *w = s;
+  while (*r) {
+    if (*r != '\r')
+      *w++ = *r;
+    r++;
+  }
+  *w = '\0';
+}
+
 /* Read all data from a pipe handle into a dynamically allocated string */
 static char *read_handle(HANDLE h) {
   size_t cap = 1024, len = 0;
@@ -35,6 +46,7 @@ static char *read_handle(HANDLE h) {
     len += n;
   }
   buf[len] = '\0';
+  strip_cr(buf);
   return buf;
 }
 
@@ -69,35 +81,50 @@ int os_exec_capture(const char *command, char **out_stdout, char **out_stderr,
   si.dwFlags |= STARTF_USESTDHANDLES;
   ZeroMemory(&pi, sizeof(pi));
 
-  /* Write command to a temp script file, then execute with sh.
-   * This avoids all command-line quoting issues on Windows. */
+  /* Write command to a temp batch file, then execute with cmd.exe.
+   * This avoids command-line quoting issues on Windows. */
   char tmppath[MAX_PATH];
   char tmpfile[MAX_PATH];
   GetTempPathA(MAX_PATH, tmppath);
   GetTempFileNameA(tmppath, "axt", 0, tmpfile);
 
-  FILE *fp = fopen(tmpfile, "w");
-  if (!fp) {
+  /* Rename to .bat so cmd.exe treats it as a batch file */
+  char batfile[MAX_PATH];
+  snprintf(batfile, MAX_PATH, "%s.bat", tmpfile);
+  if (!MoveFileA(tmpfile, batfile)) {
+    DeleteFileA(tmpfile);
     CloseHandle(stdout_rd);
     CloseHandle(stdout_wr);
     CloseHandle(stderr_rd);
     CloseHandle(stderr_wr);
     return -1;
   }
+
+  FILE *fp = fopen(batfile, "w");
+  if (!fp) {
+    DeleteFileA(batfile);
+    CloseHandle(stdout_rd);
+    CloseHandle(stdout_wr);
+    CloseHandle(stderr_rd);
+    CloseHandle(stderr_wr);
+    return -1;
+  }
+  /* @echo off suppresses command echoing in batch files */
+  fputs("@echo off\n", fp);
   fputs(command, fp);
   fputs("\n", fp);
   fclose(fp);
 
-  size_t cmdlen = strlen(tmpfile) + 8;
+  size_t cmdlen = strlen(batfile) + 16;
   char *cmdline = malloc(cmdlen);
-  snprintf(cmdline, cmdlen, "sh \"%s\"", tmpfile);
+  snprintf(cmdline, cmdlen, "cmd.exe /C \"%s\"", batfile);
 
   BOOL created = CreateProcessA(NULL, cmdline, NULL, NULL, TRUE, 0, NULL,
                                 workdir, &si, &pi);
   free(cmdline);
 
   if (!created) {
-    DeleteFileA(tmpfile);
+    DeleteFileA(batfile);
     CloseHandle(stdout_rd);
     CloseHandle(stdout_wr);
     CloseHandle(stderr_rd);
@@ -121,7 +148,7 @@ int os_exec_capture(const char *command, char **out_stdout, char **out_stderr,
 
   CloseHandle(pi.hProcess);
   CloseHandle(pi.hThread);
-  DeleteFileA(tmpfile);
+  DeleteFileA(batfile);
 
   return 0;
 }

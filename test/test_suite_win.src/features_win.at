@@ -1,0 +1,39 @@
+# Feature tests: AT_DATA, escapes, includes (Windows, cmd.exe native)
+
+AT_SETUP([AT_DATA creates file for AT_CHECK])
+AT_DATA([t.at], [AT_INIT(@<:@T@:>@)
+AT_SETUP(@<:@data test@:>@)
+AT_DATA(@<:@input.txt@:>@, @<:@hello world@:>@)
+AT_CHECK(@<:@type input.txt@:>@, @<:@0@:>@, @<:@hello world@:>@)
+AT_CLEANUP
+])
+AT_CHECK([$AXT t.at], [0])
+AT_CLEANUP
+
+AT_SETUP([escape sequences produce literal brackets])
+AT_DATA([t.at], [AT_INIT(@<:@T@:>@)
+AT_SETUP(@<:@escape test@:>@)
+AT_CHECK(@<:@echo @<:@hello@:>@@:>@, @<:@0@:>@, @<:@@<:@hello@:>@
+@:>@)
+AT_CLEANUP
+])
+AT_CHECK([$AXT t.at], [0])
+AT_CLEANUP
+
+AT_SETUP([my_include loads multiple files])
+AT_DATA([suite.at], [AT_INIT(@<:@Include Suite@:>@)
+my_include(@<:@a.at@:>@)
+my_include(@<:@b.at@:>@)
+])
+AT_DATA([suite.src/a.at], [AT_SETUP(@<:@Test A@:>@)
+AT_CHECK(@<:@echo a@:>@, @<:@0@:>@, @<:@a
+@:>@)
+AT_CLEANUP
+])
+AT_DATA([suite.src/b.at], [AT_SETUP(@<:@Test B@:>@)
+AT_CHECK(@<:@echo b@:>@, @<:@0@:>@, @<:@b
+@:>@)
+AT_CLEANUP
+])
+AT_CHECK([$AXT suite.at], [0])
+AT_CLEANUP

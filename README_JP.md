@@ -26,6 +26,15 @@ cl /W3 /D_CRT_SECURE_NO_WARNINGS axt.c /Fe:axt.exe
 
 必要なツール: Visual Studio (MSVC)
 
+## シェルの動作
+
+Unix では、AT_CHECK のコマンドは `/bin/sh -c` で実行されます。  
+Windows では、AT_CHECK のコマンドは一時 `.bat` ファイルに書き出され、`cmd.exe /C` で実行されます。
+
+そのため、AT_CHECK 内のコマンドは実行プラットフォームのシェル構文に従う必要があります:
+- Unix: 標準シェル構文（パイプ、`grep`、`sed` 等）
+- Windows: `cmd.exe` 構文（`echo`、`type`、`exit /b` 等）
+
 ## テスト
 
 ```sh
