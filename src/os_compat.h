@@ -20,4 +20,11 @@ int os_rmdir_r(const char *path);
 /* Write content to a file. Returns 0 on success. */
 int os_write_file(const char *path, const char *content, size_t len);
 
+/*
+ * Shell to use for command execution.
+ * NULL means platform default (/bin/sh on Unix, cmd.exe on Windows).
+ * Set via --shell option.
+ */
+extern const char *os_shell;
+
 #endif /* AXT_OS_COMPAT_H */

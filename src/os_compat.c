@@ -14,6 +14,8 @@
 #define strdup _strdup
 #endif
 
+const char *os_shell = NULL;
+
 /* Strip \r from a string in-place (normalize CRLF to LF) */
 static void strip_cr(char *s) {
   char *r = s, *w = s;
@@ -81,17 +83,22 @@ int os_exec_capture(const char *command, char **out_stdout, char **out_stderr,
   si.dwFlags |= STARTF_USESTDHANDLES;
   ZeroMemory(&pi, sizeof(pi));
 
-  /* Write command to a temp batch file, then execute with cmd.exe.
-   * This avoids command-line quoting issues on Windows. */
+  /* Write command to a temp file, then execute with the chosen shell. */
   char tmppath[MAX_PATH];
   char tmpfile[MAX_PATH];
+  char scriptfile[MAX_PATH];
   GetTempPathA(MAX_PATH, tmppath);
   GetTempFileNameA(tmppath, "axt", 0, tmpfile);
 
-  /* Rename to .bat so cmd.exe treats it as a batch file */
-  char batfile[MAX_PATH];
-  snprintf(batfile, MAX_PATH, "%s.bat", tmpfile);
-  if (!MoveFileA(tmpfile, batfile)) {
+  if (os_shell) {
+    /* Custom shell (e.g. sh from Git Bash): write as plain script */
+    snprintf(scriptfile, MAX_PATH, "%s.sh", tmpfile);
+  } else {
+    /* Default: cmd.exe batch file */
+    snprintf(scriptfile, MAX_PATH, "%s.bat", tmpfile);
+  }
+
+  if (!MoveFileA(tmpfile, scriptfile)) {
     DeleteFileA(tmpfile);
     CloseHandle(stdout_rd);
     CloseHandle(stdout_wr);
@@ -100,31 +107,45 @@ int os_exec_capture(const char *command, char **out_stdout, char **out_stderr,
     return -1;
   }
 
-  FILE *fp = fopen(batfile, "w");
+  FILE *fp = fopen(scriptfile, "w");
   if (!fp) {
-    DeleteFileA(batfile);
+    DeleteFileA(scriptfile);
     CloseHandle(stdout_rd);
     CloseHandle(stdout_wr);
     CloseHandle(stderr_rd);
     CloseHandle(stderr_wr);
     return -1;
   }
-  /* @echo off suppresses command echoing in batch files */
-  fputs("@echo off\n", fp);
+  if (!os_shell) {
+    /* @echo off suppresses command echoing in batch files */
+    fputs("@echo off\n", fp);
+  }
   fputs(command, fp);
   fputs("\n", fp);
   fclose(fp);
 
-  size_t cmdlen = strlen(batfile) + 16;
+  size_t cmdlen = strlen(scriptfile) + (os_shell ? strlen(os_shell) : 16) + 8;
   char *cmdline = malloc(cmdlen);
-  snprintf(cmdline, cmdlen, "cmd.exe /C \"%s\"", batfile);
+  if (!cmdline) {
+    DeleteFileA(scriptfile);
+    CloseHandle(stdout_rd);
+    CloseHandle(stdout_wr);
+    CloseHandle(stderr_rd);
+    CloseHandle(stderr_wr);
+    return -1;
+  }
+  if (os_shell) {
+    snprintf(cmdline, cmdlen, "%s \"%s\"", os_shell, scriptfile);
+  } else {
+    snprintf(cmdline, cmdlen, "cmd.exe /C \"%s\"", scriptfile);
+  }
 
   BOOL created = CreateProcessA(NULL, cmdline, NULL, NULL, TRUE, 0, NULL,
                                 workdir, &si, &pi);
   free(cmdline);
 
   if (!created) {
-    DeleteFileA(batfile);
+    DeleteFileA(scriptfile);
     CloseHandle(stdout_rd);
     CloseHandle(stdout_wr);
     CloseHandle(stderr_rd);
@@ -148,7 +169,7 @@ int os_exec_capture(const char *command, char **out_stdout, char **out_stderr,
 
   CloseHandle(pi.hProcess);
   CloseHandle(pi.hThread);
-  DeleteFileA(batfile);
+  DeleteFileA(scriptfile);
 
   return 0;
 }
@@ -222,6 +243,8 @@ int os_write_file(const char *path, const char *content, size_t len) {
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+const char *os_shell = NULL;
 
 /* Read all data from fd into a dynamically allocated string */
 static char *read_fd(int fd) {

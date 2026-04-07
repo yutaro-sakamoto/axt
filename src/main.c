@@ -22,6 +22,7 @@ extern int yyparse(void);
 typedef struct {
   int parallel;
   const char *envfile;
+  const char *shell;
   int verbose;
   const char *input;
 } Options;
@@ -32,6 +33,8 @@ static void print_usage(void) {
                   "Options:\n"
                   "  -j <N>          Parallel execution count (default: 2)\n"
                   "  --env <file>    Environment variable file\n"
+                  "  --shell <prog>  Shell to execute commands (default: "
+                  "platform shell)\n"
                   "  -v              Verbose output\n"
                   "  --help          Show help\n"
                   "  --version       Show version\n");
@@ -40,6 +43,7 @@ static void print_usage(void) {
 static int parse_options(int argc, const char *const argv[], Options *opts) {
   opts->parallel = 2;
   opts->envfile = NULL;
+  opts->shell = NULL;
   opts->verbose = 0;
   opts->input = NULL;
 
@@ -64,6 +68,12 @@ static int parse_options(int argc, const char *const argv[], Options *opts) {
         return -1;
       }
       opts->envfile = argv[++i];
+    } else if (strcmp(argv[i], "--shell") == 0) {
+      if (i + 1 >= argc) {
+        fprintf(stderr, "error: --shell requires an argument\n");
+        return -1;
+      }
+      opts->shell = argv[++i];
     } else if (strcmp(argv[i], "-v") == 0) {
       opts->verbose = 1;
     } else if (argv[i][0] == '-') {
@@ -348,6 +358,10 @@ int main(int argc, char *argv[]) {
   if (opts.envfile) {
     if (envfile_load(opts.envfile) < 0)
       return 1;
+  }
+
+  if (opts.shell) {
+    os_shell = opts.shell;
   }
 
   yyin = fopen(opts.input, "r");
