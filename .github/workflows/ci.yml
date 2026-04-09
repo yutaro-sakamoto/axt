@@ -58,7 +58,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - run: apt-get update && apt-get install -y gcc
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: axt-amalgamated
       - run: cc axt.c -lpthread -o axt
@@ -72,7 +72,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - run: dnf install -y gcc
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: axt-amalgamated
       - run: cc axt.c -lpthread -o axt
@@ -84,7 +84,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: axt-amalgamated
       - run: cc axt.c -lpthread -o axt
@@ -96,7 +96,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: axt-amalgamated
       - shell: cmd
