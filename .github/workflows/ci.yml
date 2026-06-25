@@ -8,28 +8,28 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: sudo apt-get update && sudo apt-get install -y gcc make flex bison
       - run: make test
 
   check-format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: sudo apt-get update && sudo apt-get install -y clang-format
       - run: make check-format
 
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: sudo apt-get update && sudo apt-get install -y cppcheck
       - run: make lint
 
   devcontainer:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: devcontainers/ci@v0.3
         with:
           runCmd: |
@@ -42,7 +42,7 @@ jobs:
   amalgamate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: sudo apt-get update && sudo apt-get install -y flex bison
       - run: make amalgamate
       - uses: actions/upload-artifact@v4
@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     container: ubuntu:24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: apt-get update && apt-get install -y gcc
       - uses: actions/download-artifact@v4
         with:
@@ -70,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     container: almalinux:9
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: dnf install -y gcc
       - uses: actions/download-artifact@v4
         with:
@@ -83,7 +83,7 @@ jobs:
     needs: amalgamate
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v4
         with:
           name: axt-amalgamated
@@ -95,7 +95,7 @@ jobs:
     needs: amalgamate
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v4
         with:
           name: axt-amalgamated
